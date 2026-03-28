@@ -30,6 +30,10 @@ function main() {
     ctx = ctxTemp;
 
     console.log("test");
+
+    let a:number;
+
+    a = "moin";
     
 
     gridx = window.innerWidth / 2;

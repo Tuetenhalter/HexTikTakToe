@@ -29,6 +29,9 @@ function main() {
     if (ctxTemp == undefined) return;
     ctx = ctxTemp;
 
+    console.log("test");
+    
+
     gridx = window.innerWidth / 2;
     gridy = window.innerHeight / 2;
 

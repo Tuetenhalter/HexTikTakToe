@@ -33,7 +33,7 @@ export let pointerY = 0;
 
 export function addListener() {
 
-    document.addEventListener("resize", resizeListener)
+    window.addEventListener("resize", resizeListener)
 
     document.addEventListener("click", clickListener)
     document.addEventListener('mousedown', mouseDownListener);
@@ -51,16 +51,19 @@ export function addListener() {
     });
 }
 
+function resizeListener() {
+
+    console.log("moin");
+    
+    
+    resizeCanvas();
+}
+
 function clickListener(event: PointerEvent){
     let pos = point_to_Hex(event.x, event.y);
     game.placeTile(pos);
 }
 
-function resizeListener() {
-
-    
-    resizeCanvas();
-}
 
 
 

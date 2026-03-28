@@ -28,3 +28,10 @@ jobs:
 
       - name: Build
         run: npm run build    # Assumes you have "build": "tsc" in your package.json
+
+      # This step takes your 'dist' folder and puts it on the web
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: public # The folder your build script generates
+          branch: gh-pages # The branch the site will live on

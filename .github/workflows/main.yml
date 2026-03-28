@@ -36,7 +36,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./dist" # Ensure this matches your tsconfig outDir
+          path: "./public" # Ensure this matches your tsconfig outDir
 
   deploy:
     needs: build

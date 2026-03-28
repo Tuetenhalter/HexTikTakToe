@@ -1,0 +1,30 @@
+name: TypeScript CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/checkout@v4
+        with:
+          node-version: '25' # Or your preferred version
+          cache: 'npm'       # Speeds up future runs by caching node_modules
+
+      - name: Install dependencies
+        run: npm ci          # 'npm ci' is faster and more reliable than 'npm install' in CI
+
+      - name: Type Check
+        run: npx tsc --noEmit # Checks for errors without creating files
+
+      - name: Build
+        run: npm run build    # Assumes you have "build": "tsc" in your package.json

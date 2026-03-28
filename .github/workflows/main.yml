@@ -2,16 +2,16 @@ name: TypeScript CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write 
+      contents: write
 
     steps:
       - name: Checkout code
@@ -20,21 +20,32 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24' # Or your preferred version
-          cache: 'npm'       # Speeds up future runs by caching node_modules
+          cache: "npm" # Speeds up future runs by caching node_modules
 
       - name: Install dependencies
-        run: npm ci          # 'npm ci' is faster and more reliable than 'npm install' in CI
-
-      - name: Type Check
-        run: npx tsc --noEmit # Checks for errors without creating files
+        run: npm ci # 'npm ci' is faster and more reliable than 'npm install' in CI
 
       - name: Build
-        run: npm run build    # Assumes you have "build": "tsc" in your package.json
+        run: npm run build # Assumes you have "build": "tsc" in your package.json
 
-      # This step takes your 'dist' folder and puts it on the web
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      # Step A: Tell GitHub we are using Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # Step B: Upload the 'dist' folder as a web artifact
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          folder: public # The folder your build script generates
-          branch: gh-pages # The branch the site will live on
+          path: "./dist" # Ensure this matches your tsconfig outDir
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Step C: Deploy the artifact directly to the web
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

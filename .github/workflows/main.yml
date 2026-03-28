@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: npm ci # 'npm ci' is faster and more reliable than 'npm install' in CI
 
+      - name: Type Check
+        run: npx tsc --noEmit # Checks for errors without creating files
+
       - name: Build
         run: npm run build # Assumes you have "build": "tsc" in your package.json
 

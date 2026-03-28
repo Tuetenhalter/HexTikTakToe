@@ -6,43 +6,37 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
-
-
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           version: 25
           cache: "npm" # Speeds up future runs by caching node_modules
 
       - name: Install dependencies
-        run: npm ci # 'npm ci' is faster and more reliable than 'npm install' in CI
+        run: npm ci 
 
       - name: Type Check
-        run: npx tsc --noEmit # Checks for errors without creating files
+        run: npx tsc --noEmit 
 
       - name: Build
-        run: npm run build # Assumes you have "build": "tsc" in your package.json
+        run: npm run build
 
-      # Step A: Tell GitHub we are using Pages
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # Step B: Upload the 'dist' folder as a web artifact
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./public" # Ensure this matches your tsconfig outDir
+          path: "./public" 
 
   deploy:
     permissions:
@@ -55,7 +49,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Step C: Deploy the artifact directly to the web
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

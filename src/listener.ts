@@ -35,7 +35,7 @@ export function addListener() {
 
     window.addEventListener("resize", resizeListener)
 
-    document.addEventListener("click", clickListener)
+    canvas.addEventListener("click", clickListener)
     document.addEventListener('mousedown', mouseDownListener);
     document.addEventListener('mouseup', mouseUpListener);
     document.addEventListener("mousemove", mouseMoveListener);

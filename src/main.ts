@@ -1,4 +1,4 @@
-import { borderSize } from "./const.js";
+import { borderSize, COLOR_BLUE, COLOR_BLUE_HOVER, COLOR_EMPTY, COLOR_EMPTY_HOVER, COLOR_RED, COLOR_RED_HOVER, COLOR_TEST, COLOR_TEST_HOVER, START_GRID_RADIUS } from "./const.js";
 import { Game } from "./game.js";
 import { addListener, pointerX, pointerY } from "./listener.js";
 import { forGrid } from "./text.js";
@@ -10,7 +10,7 @@ export let ctx: CanvasRenderingContext2D;
 export let gridx = 500;
 export let gridy = 500;
 
-export let gridRadius = 100;
+export let gridRadius = START_GRID_RADIUS;
 
 export let game: Game;
 
@@ -29,11 +29,6 @@ function main() {
     if (ctxTemp == undefined) return;
     ctx = ctxTemp;
 
-    console.log("test");
-
-
-    
-
     gridx = window.innerWidth / 2;
     gridy = window.innerHeight / 2;
 
@@ -48,11 +43,26 @@ function main() {
 
 
 function draw() {
-
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // let distance = gridRadius * Math.sqrt(3);
+    // let distancedown = gridRadius * 1.5;
+    // let distenceh = distance / 2;
+    // for (let x = game.gridXMin; x <= game.gridXMax; x++) {
+    //     for (let y = game.gridYMin; y <= game.gridYMax; y++) {
+
+    //         drawHex(ctx, gridx + distance * x + distenceh * y, gridy + distancedown * y, gridRadius, "#003a03")
+
+
+    //     }
+    // }
+
+
+
     drawGrid(ctx, gridx, gridy, gridRadius);
+
+
+
 
     requestAnimationFrame(draw);
 
@@ -65,21 +75,35 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
     let distenceh = distance / 2;
     forGrid(game.grid, (x, y, e) => {
 
-
-
-        let c:string;
+        let c: string;
         if (e == "e") {
-            c = "black";
+            c = COLOR_EMPTY;
         } else if (e == "b") {
-            c = "blue";
+            c = COLOR_BLUE;
+        } else if (e == "r") {
+            c = COLOR_RED;
         } else {
-            c = "red"
+            c = COLOR_TEST
         }
         drawHex(ctx, xg + distance * x + distenceh * y, yg + distancedown * y, radius, c)
 
     })
 
-    //drawHex(ctx, xg + distance * pointerX + distenceh * pointerY, yg + distancedown * pointerY, radius, "green")
+    let colorPointer: string;
+    const tilePointer = game.getTile({ x: pointerX, y: pointerY });
+
+    if (tilePointer == "e") {
+        colorPointer = COLOR_EMPTY_HOVER;
+    } else if (tilePointer == "b") {
+        colorPointer = COLOR_BLUE_HOVER;
+    } else if (tilePointer == "r") {
+        colorPointer = COLOR_RED_HOVER;
+    } else {
+        colorPointer = COLOR_TEST_HOVER
+    }
+    if(tilePointer != undefined){
+        drawHex(ctx, xg + distance * pointerX + distenceh * pointerY, yg + distancedown * pointerY, radius, colorPointer)
+    }
 }
 
 

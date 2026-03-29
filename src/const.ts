@@ -1,5 +1,9 @@
 
 
+export const LINE_TO_WIN = 6;
+export const PLACE_RANGE = 8;
+
+
 
 export const START_GRID_RADIUS = 50;
 

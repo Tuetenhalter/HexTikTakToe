@@ -1,4 +1,6 @@
-import { tile, gridPos, gridType, player } from "./type"
+import { LINE_TO_WIN, PLACE_RANGE } from "./const.js";
+import { copyGrid } from "./idk.js";
+import { tile, gridPos, gridType, player, GameState } from "./type.js"
 
 
 
@@ -16,7 +18,8 @@ export class Game {
     gridYMin: number;
     gridYMax: number;
 
-    lineLenthToWin: number;
+    history: GameState[];
+    historyPos: number;
 
 
     constructor() {
@@ -28,7 +31,10 @@ export class Game {
         this.gridYMin = 0;
         this.gridYMax = 0;
 
-        this.lineLenthToWin = 6;
+        this.history = [];
+        this.historyPos = -1;
+
+        this.saveToHistory();
     }
 
     public placeTile(pos: gridPos) {
@@ -38,6 +44,8 @@ export class Game {
         }
 
         this.setTile(pos, this.whichTurn);
+
+        // change Turn
         if (this.turnNumber == 0) {
             this.turnNumber = 1;
         } else {
@@ -57,14 +65,47 @@ export class Game {
 
         }
 
-
-        let a = this.getAllInRange(pos, 8);
+        // place the 'e'
+        let a = this.getAllInRange(pos, PLACE_RANGE);
         a.forEach((pos) => {
             if (this.getTile(pos) == undefined) {
                 this.setTile(pos, 'e');
             }
         });
 
+        this.saveToHistory();
+
+    }
+
+    public undoMove() {
+        if (this.historyPos == 0) {
+            return;
+        }
+
+        this.historyPos--;
+        let lastGameState = this.history[this.historyPos];
+        this.loadGameState(lastGameState);
+    }
+
+    public redoMove() {
+        if (this.historyPos == this.history.length - 1) {
+            return;
+        }
+
+        this.historyPos++;
+        let lastGameState = this.history[this.historyPos];
+        this.loadGameState(lastGameState);
+    }
+
+    public saveToHistory() {
+
+        // remove everything after pos
+        if (this.historyPos < this.history.length - 1) {
+            this.history = this.history.slice(0, this.historyPos + 1);
+        }
+
+        this.historyPos++;
+        this.history[this.historyPos] = this.createGameState();
     }
 
 
@@ -84,7 +125,6 @@ export class Game {
     }
 
     public forrecesetTile({ x, y }: gridPos, field: tile) {
-
         if (!this.grid[x]) {
             this.grid[x] = [];
         }
@@ -125,7 +165,7 @@ export class Game {
                 if (e == curTile) {
                     linecount++;
 
-                    if (linecount == this.lineLenthToWin) {
+                    if (linecount == LINE_TO_WIN) {
                         if (curTile == 'b' || curTile == 'r') {
                             return curTile;
                         }
@@ -145,7 +185,7 @@ export class Game {
                 const e = this.getTile({ x, y });
                 if (e == curTile) {
                     linecount++;
-                    if (linecount == this.lineLenthToWin) {
+                    if (linecount == LINE_TO_WIN) {
                         if (curTile == 'b' || curTile == 'r') {
                             return curTile;
                         }
@@ -168,10 +208,9 @@ export class Game {
                 let pos = { x: this.gridXMin + i, y: y - i, };
                 const e = this.getTile(pos);
 
-                //this.forrecesetTile(pos, "t");
                 if (e == curTile) {
                     linecount++;
-                    if (linecount == this.lineLenthToWin) {
+                    if (linecount == LINE_TO_WIN) {
                         if (curTile == 'b' || curTile == 'r') {
                             return curTile;
                         }
@@ -185,7 +224,7 @@ export class Game {
         }
 
         l = this.gridXMax - this.gridXMin + 1;
-        for (let x = this.gridXMin+1; x <= this.gridXMax; x++) {
+        for (let x = this.gridXMin + 1; x <= this.gridXMax; x++) {
             l--;
             linecount = 0;
             curTile = undefined;
@@ -196,7 +235,7 @@ export class Game {
                 // this.forrecesetTile(pos, "t");
                 if (e == curTile) {
                     linecount++;
-                    if (linecount == this.lineLenthToWin) {
+                    if (linecount == LINE_TO_WIN) {
                         if (curTile == 'b' || curTile == 'r') {
                             return curTile;
                         }
@@ -208,9 +247,34 @@ export class Game {
 
             }
         }
-
-
         return undefined;
     }
 
+    public createGameState(): GameState {
+        return {
+            grid: copyGrid(this.grid),
+            whichTurn: this.whichTurn,
+            turnNumber: this.turnNumber,
+
+            gridXMin: this.gridXMin,
+            gridXMax: this.gridXMax,
+
+            gridYMin: this.gridYMin,
+            gridYMax: this.gridYMax
+        }
+    }
+
+    public loadGameState(gameState: GameState) {
+
+        this.whichTurn = gameState.whichTurn;
+        this.turnNumber = gameState.turnNumber;
+
+        this.gridXMin = gameState.gridXMin;
+        this.gridXMax = gameState.gridXMax;
+        this.gridYMin = gameState.gridYMin;
+        this.gridYMax = gameState.gridYMax;
+
+        this.grid = copyGrid(gameState.grid);
+    }
 }
+

@@ -1,4 +1,5 @@
 import { MAXGRIDRADIUS, MINGRIDRADIUS, TOCUHZOOMMULRI, WHEELZOOMMULTI } from "./const.js";
+import { gridRadiusMinMax, point_to_Hex } from "./idk.js";
 import { canvas, game, gridRadius, gridx, gridy, resizeCanvas, setGridPos, setGridRadius } from "./main.js"
 import { gridPos } from "./type.js";
 
@@ -44,6 +45,8 @@ export function addListener() {
     document.addEventListener("touchend", touchendListerner);
     document.addEventListener("touchmove", touchMoveListener);
 
+    window.addEventListener("keydown", keydownListener);
+
     canvas.addEventListener("touchstart", (event) => {
         if (event.touches.length > 1) {
             event.preventDefault(); // Prevents multi-touch zooming
@@ -54,12 +57,12 @@ export function addListener() {
 function resizeListener() {
 
     console.log("moin");
-    
-    
+
+
     resizeCanvas();
 }
 
-function clickListener(event: PointerEvent){
+function clickListener(event: PointerEvent) {
     let pos = point_to_Hex(event.x, event.y);
     game.placeTile(pos);
 }
@@ -229,65 +232,18 @@ function calcTouchMiddle(touches: TouchList) {
     return { x, y };
 }
 
+function keydownListener(event: KeyboardEvent) {
 
+    const key = event.key.toLowerCase();
+    const isControlPressed = event.ctrlKey || event.metaKey;
 
-
-// ######################################################################################################
-
-function gridRadiusMinMax(r: number) {
-    return Math.min(MAXGRIDRADIUS, Math.max(MINGRIDRADIUS, r));
-}
-
-
-function point_to_Hex(x: number, y: number) {
-
-    // invert the scaling and transfomation
-    let x2 = (x - gridx) / gridRadius
-    let y2 = (y - gridy) / gridRadius
-
-    // cartesian to hex
-    let q = (Math.sqrt(3) / 3 * x2 - 1. / 3 * y2)
-    let r = (2. / 3 * y2)
-    return round_Hex_Axial({ x: q, y: r });
-
-}
-
-type Hex_Cube = { x: number, y: number, z: number }
-
-
-
-function round_Hex_Axial(frac: gridPos): gridPos {
-    return cube_to_axial(round_Hex_Cube(axial_to_cube(frac)));
-
-}
-
-function round_Hex_Cube(frac: Hex_Cube): Hex_Cube {
-    var q = Math.round(frac.x)
-    var r = Math.round(frac.y)
-    var s = Math.round(frac.z)
-
-    var q_diff = Math.abs(q - frac.x)
-    var r_diff = Math.abs(r - frac.y)
-    var s_diff = Math.abs(s - frac.z)
-
-    if (q_diff > r_diff && q_diff > s_diff) {
-        q = -r - s
-    } else if (r_diff > s_diff) {
-        r = -q - s
-    } else {
-        s = -q - r
+    if (isControlPressed && key === 'z') {
+        event.preventDefault();
+        game.undoMove();
     }
 
-    return { x: q, y: r, z: s }
-}
-
-function cube_to_axial(cube: Hex_Cube): gridPos {
-    return { x: cube.x, y: cube.y }
-}
-
-function axial_to_cube(hex: gridPos): Hex_Cube {
-    var q = hex.x
-    var r = hex.y
-    var s = -q - r
-    return { x: q, y: r, z: s }
+    if (isControlPressed && key === 'y') {
+        event.preventDefault();
+        game.redoMove();
+    }
 }

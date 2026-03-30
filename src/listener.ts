@@ -1,4 +1,5 @@
-import { MAXGRIDRADIUS, MINGRIDRADIUS, TOCUHZOOMMULRI, WHEELZOOMMULTI } from "./const.js";
+import { minMax, startMinMax } from "./bot.js";
+import { MAX_DEPTH, MAXGRIDRADIUS, MINGRIDRADIUS, TOCUHZOOMMULRI, WHEELZOOMMULTI } from "./const.js";
 import { gridRadiusMinMax, point_to_Hex } from "./idk.js";
 import { canvas, game, gridRadius, gridx, gridy, resizeCanvas, setGridPos, setGridRadius } from "./main.js"
 import { gridPos } from "./type.js";
@@ -55,16 +56,13 @@ export function addListener() {
 }
 
 function resizeListener() {
-
-    console.log("moin");
-
-
     resizeCanvas();
 }
 
 function clickListener(event: PointerEvent) {
     let pos = point_to_Hex(event.x, event.y);
     game.placeTile(pos);
+
 }
 
 
@@ -119,7 +117,6 @@ function wheelListener(event: WheelEvent) {
 }
 
 function touchstartListener(event: TouchEvent) {
-    console.log(event.touches.length);
 
     if (event.touches.length == 1) {
         touchDown = true;
@@ -133,7 +130,6 @@ function touchstartListener(event: TouchEvent) {
 
     if (event.touches.length == 0) {
         touchDown = false;
-        console.log("off");
     }
 
     if (event.touches.length == 2) {
@@ -150,10 +146,8 @@ function touchstartListener(event: TouchEvent) {
 }
 
 function touchendListerner(event: TouchEvent) {
-    console.log(event.touches.length);
     if (event.touches.length == 0) {
         touchDown = false;
-        console.log("off");
     }
 
     if (event.touches.length == 1) {
@@ -192,19 +186,12 @@ function touchMoveListener(event: TouchEvent) {
     if (event.touches.length == 2) {
         let d = (calcTouchDistance(event.touches) - touch2Distance) * TOCUHZOOMMULRI;
 
-        console.log(d);
-
         let oldRadius = gridRadius;
         setGridRadius(gridRadiusMinMax(gridRadius * (1 + d)));
 
         d = 1 - oldRadius / gridRadius;
 
         let { x, y } = calcTouchMiddle(event.touches);
-
-        console.log("x: " + x);
-        console.log("y: " + y);
-
-
 
         let newX = gridx + (gridx - x) * d + x - touch2middelx;
         let newY = gridy + (gridy - y) * d + y - touch2middely;
@@ -245,5 +232,9 @@ function keydownListener(event: KeyboardEvent) {
     if (isControlPressed && key === 'y') {
         event.preventDefault();
         game.redoMove();
+    }
+
+    if (key == 'm') {
+        startMinMax(game, MAX_DEPTH);
     }
 }

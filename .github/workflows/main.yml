@@ -1,4 +1,4 @@
-name: TypeScript CI
+name: TypeScript CI and Deploy
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 25
-          cache: "npm" # Speeds up future runs by caching node_modules
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci 

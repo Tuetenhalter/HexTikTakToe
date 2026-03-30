@@ -1,3 +1,4 @@
+import { bestMove } from "./bot.js";
 import { borderSize, COLOR_BLUE, COLOR_BLUE_HOVER, COLOR_EMPTY, COLOR_EMPTY_HOVER, COLOR_RED, COLOR_RED_HOVER, COLOR_TEST, COLOR_TEST_HOVER, START_GRID_RADIUS } from "./const.js";
 import { Game } from "./game.js";
 import { addListener, pointerX, pointerY } from "./listener.js";
@@ -42,7 +43,8 @@ function main() {
 }
 
 
-function draw() {
+export function draw() {
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // let distance = gridRadius * Math.sqrt(3);
@@ -73,6 +75,11 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
     let distance = radius * Math.sqrt(3);
     let distancedown = radius * 1.5;
     let distenceh = distance / 2;
+
+    function d(x: number, y: number, c: string) {
+        drawHex(ctx, xg + distance * x + distenceh * y, yg + distancedown * y, radius, c);
+    }
+
     forGrid(game.grid, (x, y, e) => {
 
         let c: string;
@@ -82,13 +89,24 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
             c = COLOR_BLUE;
         } else if (e == "r") {
             c = COLOR_RED;
-        } else {
+        } else if (e == 't3') {
             c = COLOR_TEST
         }
-        drawHex(ctx, xg + distance * x + distenceh * y, yg + distancedown * y, radius, c)
+        d(x, y, c);
+        // drawHex(ctx, xg + distance * x + distenceh * y, yg + distancedown * y, radius, c)
 
     })
 
+    //draw best move
+    if (bestMove != undefined) {
+        d(bestMove[0].x, bestMove[0].y, COLOR_TEST);
+        d(bestMove[1].x, bestMove[1].y, COLOR_TEST);
+
+    }
+
+
+
+    // draw pointer
     let colorPointer: string;
     const tilePointer = game.getTile({ x: pointerX, y: pointerY });
 
@@ -102,7 +120,8 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
         colorPointer = COLOR_TEST_HOVER
     }
     if (tilePointer != undefined) {
-        drawHex(ctx, xg + distance * pointerX + distenceh * pointerY, yg + distancedown * pointerY, radius, colorPointer)
+        d(pointerX, pointerY, colorPointer);
+        // drawHex(ctx, xg + distance * pointerX + distenceh * pointerY, yg + distancedown * pointerY, radius, colorPointer)
     }
 }
 

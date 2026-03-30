@@ -17,3 +17,5 @@ export type GameState = {
 }
 
 export type Hex_Cube = { x: number, y: number, z: number }
+
+export type Move = [gridPos, gridPos];

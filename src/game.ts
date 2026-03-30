@@ -363,7 +363,7 @@ export class Game {
 
         switch (count) {
             case 6: return 10000000;
-            case 5: return 10000;
+            case 5: return 500;
             case 4: return 500;
             case 3: return 50;
             case 2: return 5;

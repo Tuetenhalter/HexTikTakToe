@@ -89,8 +89,10 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
             c = COLOR_BLUE;
         } else if (e == "r") {
             c = COLOR_RED;
-        } else if (e == 't3') {
+        } else if (e == 't') {
             c = COLOR_TEST
+        } else {
+            return;
         }
         d(x, y, c);
         // drawHex(ctx, xg + distance * x + distenceh * y, yg + distancedown * y, radius, c)

@@ -81,7 +81,7 @@ export function minMax(game: BotGame, depth: number, alpha: number, beta: number
 }
 
 
-type BeforeTile = { pos: gridPos, tile: tile };
+type BeforeTile = { pos: gridPos, tile: tile | undefined };
 
 
 class BotGame extends Game {
@@ -99,7 +99,7 @@ class BotGame extends Game {
         this.historyPos = game.historyPos;
     }
 
-    public setBeforeTile({ x, y }: gridPos, tile: tile): BeforeTile {
+    public setBeforeTile({ x, y }: gridPos, tile: tile): BeforeTile | undefined{
 
         if (!this.grid[x]) {
             this.grid[x] = [];
@@ -140,7 +140,7 @@ class BotGame extends Game {
         return out;
     }
 
-    public undoBeforeTile(beforeTile: BeforeTile) {
+    public undoBeforeTile(beforeTile: BeforeTile | undefined) {
         if (beforeTile == undefined) {
             return;
         }

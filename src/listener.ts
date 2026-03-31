@@ -1,5 +1,5 @@
-import { BotGame, startMinMax } from "./bot.js";
-import { WHEELZOOMMULTI, TOCUHZOOMMULRI, MAX_DEPTH } from "./const.js";
+import { bestMove, BotGame, startMinMax } from "./bot.js";
+import { WHEELZOOMMULTI, TOCUHZOOMMULRI, MAX_DEPTH, TEST_CASE3 } from "./const.js";
 import { Game } from "./game.js";
 import { point_to_Hex, gridRadiusMinMax } from "./idk.js";
 import { canvas, game, gridRadius, gridx, gridy, resizeCanvas, setGame, setGridPos, setGridRadius } from "./main.js";
@@ -236,33 +236,50 @@ function keydownListener(event: KeyboardEvent) {
     }
 
     if (key == 'm') {
-        startMinMax(game, MAX_DEPTH);
+        setGame(Game.fromString(TEST_CASE3));
+
+        let botGame = new BotGame(game);
+
+        console.log(botGame.allPossibleMoveWithThreats());
+        
+        // startMinMax(game, MAX_DEPTH);
     }
 
     if (key == 'p') {
+
+        console.log("p");
+
+        // let botGame = new BotGame(game);
+
+        // let a = botGame.allPossibleMoveWithThreads();
+
+        // console.log(a);
+
         console.log(game.toString());
 
-        let newGame = Game.fromString(game.toString());
 
-        if(newGame == undefined){
-            return;
-        }
-
-        console.log(newGame);
-
-
-        setGame(newGame);
     }
 
     if (key == 't') {
-        
+
         // let botGame = new BotGame(game);
 
         // console.log("eval: " + botGame.evaluateBoard('b'));
 
         // console.log("eval_Line: " + botGame.evaluatePos({x:pointerX, y:pointerY}, 'b'));
-        
-        
-        runTest();        
+
+
+        runTest();
+    }
+
+    if (key == 'w') {
+
+        startMinMax(game, MAX_DEPTH);
+        const [move1, move2] = bestMove;
+
+        game.placeTile(move1);
+        game.placeTile(move2);
+
+
     }
 }

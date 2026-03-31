@@ -1,11 +1,12 @@
 import { startMinMax, count, time } from "./bot.js";
-import { TEST_CASE, MAX_DEPTH } from "./const.js";
+import { TEST_CASE, MAX_DEPTH, TEST_CASE2 } from "./const.js";
 import { Game } from "./game.js";
 import { setGame, game } from "./main.js";
 
 export function node() {
     runTest();
 }
+
 
 
 

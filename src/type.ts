@@ -21,3 +21,13 @@ export type Hex_Cube = { x: number, y: number, z: number }
 export type Move = [gridPos, gridPos];
 
 export type MoveEval = [gridPos, gridPos, number];
+
+export type gridPosScore = {
+    pos: gridPos,
+    score: number
+}
+
+export type MoveScore = {
+    move: gridPos[],
+    score: number
+}

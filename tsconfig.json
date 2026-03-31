@@ -1,7 +1,8 @@
 {
     "compilerOptions": {
         "outDir": "public/build",
-        "rootDir": "./src"
+        "rootDir": "./src",
+        "lib": ["ESNext", "DOM"]
     },
     "include": ["src/**/*"]
 }

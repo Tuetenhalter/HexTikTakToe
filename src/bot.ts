@@ -1,7 +1,8 @@
-import { EVAL_LINE_6, EVAL_LINE_6_MIN, EVAL_LINE_MULTI, PLACE_RANGE } from "./const.js";
+import { EVAL_LINE_6, EVAL_LINE_6_MIN, EVAL_LINE_MULTI, MAX_MOVES_CHECK, PLACE_RANGE } from "./const.js";
 import { Game } from "./game.js";
-import { forGrid } from "./idk.js";
-import { gridPos, Move, MoveEval, player, tile } from "./type.js";
+import { forGrid, gridPosEqual } from "./idk.js";
+import { debug } from "./main.js";
+import { gridPos, gridPosScore, Move, MoveEval, MoveScore, player, tile } from "./type.js";
 
 
 
@@ -10,6 +11,8 @@ export let bestMove: Move;
 export let count: number;
 export let time: number;
 
+export let moveScore: MoveScore[];
+
 export function startMinMax(game: Game, depth: number) {
 
     count = 0;
@@ -17,39 +20,89 @@ export function startMinMax(game: Game, depth: number) {
 
     let botGame = new BotGame(game);
 
-    minMax(botGame, depth, -Infinity, Infinity, true);
+    let score = minMax(botGame, depth, -Infinity, Infinity, true);
 
     time = Date.now() - before;
     console.log("count: " + count);
-    console.log("time: " + time + "ms");
+    console.log("time: " + Math.floor(time / 1000) + "." + time % 1000 + "ms");
+    console.log("score: " + score);
 }
 
 export function minMax(game: BotGame, depth: number, alpha: number, beta: number, isRoot: boolean): number {
     count++;
-    // if (count % 1000 == 0) {
-    //     console.log(count);
+    if (count % 1000 == 0) {
+        console.log(count);
 
-    // }
+    }
     if (depth == 0) {
         return game.eval;
     }
 
     if (Math.abs(game.eval) > EVAL_LINE_6_MIN) {
+
         return game.eval
     }
 
 
 
-    let allMoves = game.allPossibleMove();
+
+    // let allMoves = game.allPossibleMove();
+
+    let { allMoves, win } = game.allPossibleMoveWithThreats();
+
+    if (win) {
+        if (isRoot) {
+            bestMove = [allMoves[0][0], allMoves[0][1]];
+        }
+        return EVAL_LINE_6;
+    }
+
+    if (allMoves.length == 0) {
+        return -EVAL_LINE_6;
+    }
 
     // simple sort for alpha betta
-    allMoves.sort((m1, m2) => {
-        let a = Math.abs(m1[0].x) + Math.abs(m1[0].y) + Math.abs(m1[1].x) + Math.abs(m1[1].y);
-        let b = Math.abs(m2[0].x) + Math.abs(m2[0].y) + Math.abs(m2[1].x) + Math.abs(m2[1].y);
-        return a - b;
+    // allMoves.sort((m1, m2) => {
+    //     let a = Math.abs(m1[0].x) + Math.abs(m1[0].y) + Math.abs(m1[1].x) + Math.abs(m1[1].y);
+    //     let b = Math.abs(m2[0].x) + Math.abs(m2[0].y) + Math.abs(m2[1].x) + Math.abs(m2[1].y);
+    //     return a - b;
+    // });
+
+    let allMovesEval: number[][] = [];
+
+    allMoves.forEach(([m1, m2]) => {
+        if (allMovesEval[m1.x] == undefined) {
+            allMovesEval[m1.x] = [];
+        }
+        if (allMovesEval[m1.x][m1.y] == undefined) {
+            allMovesEval[m1.x][m1.y] = game.evaluatePos(m1);
+        }
+
+        if (allMovesEval[m2.x] == undefined) {
+            allMovesEval[m2.x] = [];
+        }
+        if (allMovesEval[m2.x][m2.y] == undefined) {
+            allMovesEval[m2.x][m2.y] = game.evaluatePos(m2);
+        }
     });
 
+    allMoves.sort((m1, m2,) => {
+        let scoreA = allMovesEval[m1[0].x][m1[0].y] + allMovesEval[m1[1].x][m1[1].y];
+        let scoreB = allMovesEval[m2[0].x][m2[0].y] + allMovesEval[m2[1].x][m2[1].y];
+        return scoreB - scoreA;
+    });
+
+
+
+
+    // slcie the array;
+    if(MAX_MOVES_CHECK != -1){
+        allMoves = allMoves.slice(0, MAX_MOVES_CHECK);
+    }
+
     let bestPos = -1;
+
+    let scoreOut: number[] = [];
 
 
     for (let i = 0; i < allMoves.length; i++) {
@@ -88,6 +141,10 @@ export function minMax(game: BotGame, depth: number, alpha: number, beta: number
         game.eval = beforeEval;
 
 
+        if (isRoot) {
+            scoreOut[i] = score;
+        }
+
         if (score >= beta) return beta; // Skip the rest of this branch
         if (score > alpha) {
             alpha = score;
@@ -97,7 +154,22 @@ export function minMax(game: BotGame, depth: number, alpha: number, beta: number
 
     if (isRoot && bestPos !== -1) {
         bestMove = [allMoves[bestPos][0], allMoves[bestPos][1]];
-    } 2
+    }
+
+    if (isRoot) {
+
+        moveScore = [];
+
+        for (let i = 0; i < allMoves.length; i++) {
+            const movePair = allMoves[i];
+            const score = scoreOut[i];
+
+            moveScore.push({ move: movePair, score })
+        }
+
+        moveScore.sort((a, b) => b.score - a.score)
+
+    }
 
     return alpha;
 }
@@ -273,6 +345,178 @@ export class BotGame extends Game {
         }
 
         return score;
+    }
+
+    public allPossibleMoveWithThreats(p1 = this.whichTurn): { allMoves: gridPos[][], win: boolean } {
+
+        let { win, force } = this.allWinForceMove(p1);
+
+        if (win.length > 0) {
+            return {
+                allMoves: win,
+                win: true
+            };
+        }
+
+        function generateForcedCombinations(i: number): gridPos[][] {
+            if (i >= force.length) {
+                return [[]];
+            }
+
+            let out: gridPos[][] = [];
+
+            for (let indexForce = 0; indexForce < force[i].length; indexForce++) {
+                let cur = generateForcedCombinations(i + 1);
+                const e = force[i][indexForce];
+
+
+                for (let indexCur = 0; indexCur < cur.length; indexCur++) {
+
+                    let curMove = cur[indexCur];
+
+                    let add = true;
+
+                    for (let indexCurMove = 0; indexCurMove < curMove.length; indexCurMove++) {
+                        if (gridPosEqual(e, curMove[indexCurMove])) {
+                            add = false;
+                            break;
+                        }
+                    }
+                    if (add && curMove.length == 2) {
+                        continue;
+                    }
+                    if (add) {
+                        curMove = [...curMove, e];
+                    }
+                    out.push(curMove);
+                }
+            }
+
+            return out;
+
+        }
+
+        if (force.length > 0) {
+
+            let a = generateForcedCombinations(0);
+
+            if (a.length == 0) {
+                return {
+                    allMoves: [],
+                    win: false
+                };
+            }
+
+            let out: gridPos[][] = [];
+
+            let allOneMoves: gridPos[] = [];
+
+            for (let index = 0; index < a.length; index++) {
+                const element = a[index];
+                if (element.length == 2) {
+                    out.push(element);
+                }
+
+                if (element.length == 1) {
+                    allOneMoves.push(a[index][0]);
+                }
+            }
+
+
+            for (let index = 0; index < allOneMoves.length; index++) {
+                const pos = allOneMoves[index];
+
+                let emptyTiles: gridPos[] = [];
+                forGrid(this.grid, (x, y, e) => {
+                    if (this.getTile({ x, y }) != 'e') {
+                        return;
+                    }
+                    if (gridPosEqual(pos, { x, y })) {
+                        return;
+                    }
+                    emptyTiles.push({ x, y });
+                });
+
+                for (let i = 0; i < emptyTiles.length; i++) {
+                    out.push([emptyTiles[i], pos]);
+                }
+
+            }
+
+
+            return {
+                allMoves: out,
+                win: false
+            };
+        }
+
+        return {
+            allMoves: this.allPossibleMove(),
+            win: false
+        }
+    }
+
+
+
+    public allWinForceMove(p1 = this.whichTurn): { win: gridPos[][], force: gridPos[][] } {
+        const p2 = this.otherPlayer(p1);
+        let game = this;
+
+        let win: gridPos[][] = [];
+        let force: gridPos[][] = [];
+
+        function f(x: number, y: number, dx: number, dy: number) {
+
+            let p1Count = 0;
+            let p2Count = 0;
+            let emptyCount = 0;
+            let emptyPos: gridPos[] = [];
+
+            for (let i = 0; i < 6; i++) {
+                const e = game.getTile({ x: x + dx * i, y: y + dy * i });
+                if (e == p1) {
+                    p1Count++;
+                } else if (e == p2) {
+                    p2Count++;
+                } else {
+                    emptyCount++;
+                    emptyPos.push({ x: x + dx * i, y: y + dy * i });
+                }
+            }
+
+            if (p2Count == 0 && p1Count >= 4) {
+                win.push(emptyPos);
+            }
+            if (p1Count == 0 && p2Count >= 4) {
+                force.push(emptyPos);
+            }
+        }
+
+        this.doForAllLines(f);
+
+        debug.posList = [];
+
+
+
+
+        // let i = 0;
+        // for (let index = 0; index < win.length; index++) {
+        //     for (let index2 = 0; index2 < win[index].length; index2++) {
+        //         debug.posList[i] = win[index][index2];
+        //         debug.posListColor[i] = "#efc0043d";
+        //         i++;
+        //     }
+        // }
+
+        // for (let index = 0; index < foce.length; index++) {
+        //     for (let index2 = 0; index2 < foce[index].length; index2++) {
+        //         debug.posList[i] = foce[index][index2];
+        //         debug.posListColor[i] = "#04a8ef3d";
+        //         i++;
+        //     }
+        // }
+
+        return { win, force };
     }
 
 }

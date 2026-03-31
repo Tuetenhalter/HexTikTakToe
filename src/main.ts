@@ -1,4 +1,4 @@
-import { bestMove } from "./bot.js";
+import { bestMove, moveScore } from "./bot.js";
 import { borderSize, COLOR_BLUE, COLOR_BLUE_HOVER, COLOR_EMPTY, COLOR_EMPTY_HOVER, COLOR_RED, COLOR_RED_HOVER, COLOR_TEST, COLOR_TEST_HOVER, START_GRID_RADIUS } from "./const.js";
 import { Game } from "./game.js";
 import { forGrid } from "./idk.js";
@@ -17,10 +17,15 @@ export let gridRadius = START_GRID_RADIUS;
 
 export let game: Game;
 
+
+let testP: Element;
+
 export let debug: {
     posList: gridPos[]
+    posListColor: string[]
 } = {
-    posList: []
+    posList: [],
+    posListColor: []
 }
 
 export function resizeCanvas() {
@@ -43,9 +48,14 @@ function main() {
     let canvasTemp = document.querySelector("canvas");
     if (canvasTemp == undefined) return;
     canvas = canvasTemp;
+
     let ctxTemp = canvas.getContext("2d");
     if (ctxTemp == undefined) return;
     ctx = ctxTemp;
+
+    let testPTemp = document.querySelector("#testP");
+    if (testPTemp == undefined) return;
+    testP = testPTemp;
 
     gridx = window.innerWidth / 2;
     gridy = window.innerHeight / 2;
@@ -64,24 +74,10 @@ export function draw() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // let distance = gridRadius * Math.sqrt(3);
-    // let distancedown = gridRadius * 1.5;
-    // let distenceh = distance / 2;
-    // for (let x = game.gridXMin; x <= game.gridXMax; x++) {
-    //     for (let y = game.gridYMin; y <= game.gridYMax; y++) {
-
-    //         drawHex(ctx, gridx + distance * x + distenceh * y, gridy + distancedown * y, gridRadius, "#003a03")
-
-
-    //     }
-    // }
-
-
-
     drawGrid(ctx, gridx, gridy, gridRadius);
 
 
-
+    testP.textContent = "x: " + pointerX + ", y: " + pointerY
 
     requestAnimationFrame(draw);
 
@@ -92,6 +88,19 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
     let distance = radius * Math.sqrt(3);
     let distancedown = radius * 1.5;
     let distenceh = distance / 2;
+
+
+    function calcX(x: number, y: number) {
+        return xg + distance * x + distenceh * y;
+    }
+
+    function calcY(y: number) {
+        return yg + distancedown * y;
+    }
+
+    function calcXY(x: number, y: number) {
+        return [calcX(x, y), calcY(y)];
+    }
 
     function d(x: number, y: number, c: string) {
         drawHex(ctx, xg + distance * x + distenceh * y, yg + distancedown * y, radius, c);
@@ -119,11 +128,12 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
     //draw best move
     if (bestMove != undefined) {
         d(bestMove[0].x, bestMove[0].y, COLOR_TEST);
-        d(bestMove[1].x, bestMove[1].y, COLOR_TEST);
+        if (bestMove[1] != undefined)
+            d(bestMove[1].x, bestMove[1].y, COLOR_TEST);
 
     }
 
-    
+
 
 
     // draw pointer
@@ -147,10 +157,52 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
 
     }
 
-    debug.posList.forEach(({ x, y }) => {
-        d(x, y, "#f0f8");
+
+    //draw debug
+    debug.posList.forEach(({ x, y }, i) => {
+        const c = debug.posListColor[i];
+        if (c == undefined) {
+            d(x, y, "#f0f8");
+        } else {
+            d(x, y, c);
+        }
     })
 
+
+
+    //draw scores
+
+    if (moveScore != undefined) {
+
+        let min = Infinity;
+        let max = -Infinity;
+        moveScore.forEach(({ score }) => {
+            if(max < score){
+                max = score;
+            }
+
+            if(min > score){
+                min = score;
+            }
+        });
+
+
+        for (let i = 0; i < Math.min(moveScore.length, 5); i++) {
+            const { score, move } = moveScore[i];
+            const normalized = Math.log10(score - min)
+
+            const [m1, m2] = move;
+
+            ctx.beginPath();
+            ctx.moveTo(calcX(m1.x, m1.y), calcY(m1.y));
+            ctx.lineTo(calcX(m2.x, m2.y), calcY(m2.y));
+
+            // 3. Style and render
+            ctx.strokeStyle = "yellow"; // Line color
+            ctx.lineWidth = normalized;        // Line width
+            ctx.stroke();
+        }
+    }
 }
 
 
@@ -193,7 +245,10 @@ export function setGridRadius(r: number) {
     gridRadius = r;
 }
 
-export function setGame(newGame: Game) {
+export function setGame(newGame: Game | undefined) {
+    if (newGame == undefined) {
+        return;
+    }
     game = newGame;
 }
 

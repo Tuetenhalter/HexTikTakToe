@@ -1,4 +1,4 @@
-import { startMinMax, bestMove, BotGame } from "./bot.js";
+import { startMinMax, bestMove, BotGame, count, time } from "./bot.js";
 import { MAX_DEPTH, PLACE_RANGE, LINE_TO_WIN, EVAL_LINE_6, EVAL_LINE_1, EVAL_LINE_2, EVAL_LINE_3, EVAL_LINE_4, EVAL_LINE_5, EVAL_LINE_6_MIN, EVAL_LINE_MULTI } from "./const.js";
 import { copyGrid, forGrid } from "./idk.js";
 import { debug, game, setGame } from "./main.js";
@@ -75,12 +75,14 @@ export class Game {
 
         this.saveToHistory();
 
-        if (this.whichTurn == 'b' && this.turnNumber == 0) {
-            startMinMax(game, MAX_DEPTH);
-            const [move1, move2] = bestMove;
-            this.placeTile(move1);
-            this.placeTile(move2);
-        }
+        // if (this.whichTurn == 'b' && this.turnNumber == 0) {
+        //     startMinMax(game, MAX_DEPTH);
+        //     const [move1, move2] = bestMove;
+
+        //     this.placeTile(move1);
+        //     this.placeTile(move2);
+            
+        // }
     }
 
     public undoMove() {
@@ -401,10 +403,14 @@ export class Game {
 
         }
 
-
+        newGame.historyPos = -1;
+        newGame.saveToHistory();
 
         return newGame;
+    }
 
+    public otherPlayer(p = this.whichTurn){
+        return p == 'b' ? 'r' : 'b';
     }
 
     public allPossibleMove(): Move[] {
@@ -430,86 +436,60 @@ export class Game {
         return out;
     }
 
-    public evaluateBoard(p1 = this.whichTurn): number {
+
+
+    public evaluateBoard(p1 = this.whichTurn):number {
         let score = 0;
+        let game = this;
         const p2 = p1 === 'r' ? 'b' : 'r';
 
-        const directions = [
-            { dx: 1, dy: 0 },  // Axis 1: Horizontal
-            { dx: 0, dy: 1 },  // Axis 2: Vertical
-            { dx: 1, dy: -1 }  // Axis 3: Diagonal
-        ];
-        2
-        for (let x = this.gridXMin; x <= this.gridXMax; x++) {
-            for (let y = this.gridYMin; y <= this.gridYMax; y++) {
-                if (x == this.gridXMin) {
-                    for (let i = 1; i < 6; i++) {
-                        let a = this.evaluateLine(x - i, y, 1, 0, p1);
-                        let b = this.evaluateLine(x - i, y, 1, 0, p2) * EVAL_LINE_MULTI;
-                        // if (a != 0)
-                        //     console.log("a: " + a);
-                        // if (b != 0)
-                        //     console.log("b: " + b);
-
-
-                        score += a;
-                        score -= b;
-
-                    }
-                }
-
-                if (y == this.gridYMin) {
-
-                    for (let i = 1; i < 6; i++) {
-                        let a = this.evaluateLine(x, y - i, 0, 1, p1);
-                        let b = this.evaluateLine(x, y - i, 0, 1, p2) * EVAL_LINE_MULTI;
-                        // if (a != 0)
-                        //     console.log("a: " + a);
-                        // if (b != 0)
-                        //     console.log("b: " + b);
-
-
-                        score += a;
-                        score -= b;
-
-                    }
-                }
-
-                if(x==this.gridXMin || y == this.gridYMax){
-                    for (let i = 1; i < 6; i++) {
-                        let b = this.evaluateLine(x - i, y + i, 1, -1, p2) * EVAL_LINE_MULTI;
-                        let a = this.evaluateLine(x - i, y + i, 1, -1, p1);
-                        // if (a != 0)
-                        //     console.log("a: " + a);
-                        // if (b != 0)
-                        //     console.log("b: " + b);
-
-
-                        score += a;
-                        score -= b;
-                    }
-                }
-                for (const { dx, dy } of directions) {
-
-                    let a = this.evaluateLine(x, y, dx, dy, p1);
-                    let b = this.evaluateLine(x, y, dx, dy, p2) * EVAL_LINE_MULTI;
-                    // if (a != 0)
-                    //     console.log("a: " + a);
-                    // if (b != 0)
-                    //     console.log("b: " + b);
-
-
-                    score += a;
-                    score -= b;
-                }
-            }
+        function f(x: number, y: number, dx: number, dy: number) {
+            score += game.evaluateLine(x, y, dx, dy, p1);
+            score -= game.evaluateLine(x, y, dx, dy, p2);
         }
+
+        this.doForAllLines(f);
+
 
         if (Math.abs(score) > EVAL_LINE_6_MIN) {
             return score > 0 ? EVAL_LINE_6 : -EVAL_LINE_6;
         }
 
         return score;
+
+    }
+
+    public doForAllLines(f: (x: number, y: number, dx: number, dy: number) => void) {
+        const directions = [
+            { dx: 1, dy: 0 },  // Axis 1: Horizontal
+            { dx: 0, dy: 1 },  // Axis 2: Vertical
+            { dx: 1, dy: -1 }  // Axis 3: Diagonal
+        ];
+
+        for (let x = this.gridXMin; x <= this.gridXMax; x++) {
+            for (let y = this.gridYMin; y <= this.gridYMax; y++) {
+                if (x == this.gridXMin) {
+                    for (let i = 1; i < 6; i++) {
+                        f(x - i, y, 1, 0);
+                    }
+                }
+                if (y == this.gridYMin) {
+                    for (let i = 1; i < 6; i++) {
+                        f(x, y - i, 0, 1);
+                    }
+                }
+
+                if (x == this.gridXMin || y == this.gridYMax) {
+                    for (let i = 1; i < 6; i++) {
+                        f(x - i, y + i, 1, -1);
+                    }
+                }
+                for (const { dx, dy } of directions) {
+                    f(x, y, dx, dy);
+
+                }
+            }
+        }
     }
 
 

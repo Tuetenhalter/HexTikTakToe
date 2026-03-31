@@ -17,7 +17,7 @@ export function copyGrid(grid: gridType): gridType {
     const newGrid: gridType = [];
     for (const x in grid) {
         const xIndex = Number(x);
-        
+
         if (grid[xIndex]) {
             newGrid[xIndex] = [];
             for (const y in grid[xIndex]) {
@@ -83,4 +83,8 @@ export function axial_to_cube(hex: gridPos): Hex_Cube {
     var r = hex.y
     var s = -q - r
     return { x: q, y: r, z: s }
+}
+
+export function gridPosEqual({ x: x1, y: y1 }: gridPos, { x: x2, y: y2 }: gridPos): boolean {
+    return x1 == x2 && y1 == y2;
 }

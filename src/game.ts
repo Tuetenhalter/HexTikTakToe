@@ -1,8 +1,9 @@
-import { bestMove, startMinMax } from "./bot.js";
-import { LINE_TO_WIN, MAX_DEPTH, PLACE_RANGE } from "./const.js";
+import { startMinMax, bestMove, BotGame } from "./bot.js";
+import { MAX_DEPTH, PLACE_RANGE, LINE_TO_WIN, EVAL_LINE_6, EVAL_LINE_1, EVAL_LINE_2, EVAL_LINE_3, EVAL_LINE_4, EVAL_LINE_5, EVAL_LINE_6_MIN, EVAL_LINE_MULTI } from "./const.js";
 import { copyGrid, forGrid } from "./idk.js";
-import { game } from "./main.js";
+import { debug, game, setGame } from "./main.js";
 import { GameState, gridPos, gridType, Move, player, tile } from "./type.js";
+
 
 
 
@@ -40,14 +41,15 @@ export class Game {
     }
 
     public placeTile(pos: gridPos) {
+
+        let botGame = new BotGame(this);
+
         let t = this.getTile(pos)
         if (t != 'e' && t != 't') {
             return;
         }
 
         this.setTile(pos, this.whichTurn);
-
-        console.log("eval: " + this.evaluateBoard());
 
         // change Turn
         if (this.turnNumber == 0) {
@@ -72,7 +74,8 @@ export class Game {
         this.expandBorder(pos);
 
         this.saveToHistory();
-        if(this.whichTurn == 'b' && this.turnNumber == 0){
+
+        if (this.whichTurn == 'b' && this.turnNumber == 0) {
             startMinMax(game, MAX_DEPTH);
             const [move1, move2] = bestMove;
             this.placeTile(move1);
@@ -294,6 +297,116 @@ export class Game {
         this.grid = copyGrid(gameState.grid);
     }
 
+
+    /**
+     * conv to String
+     * whichTurn,turnNumber,gridxMin,gridYMin
+     * list off all tiles with "n" is new line
+     * @returns 
+     */
+    public toString(): string {
+        let out: string = this.whichTurn + "," + this.turnNumber + ",";
+
+        out += this.gridXMin + "," + this.gridYMin + ",";
+        for (let y = this.gridYMin; y <= this.gridYMax; y++) {
+            for (let x = this.gridXMin; x <= this.gridXMax; x++) {
+                let e = this.getTile({ x, y });
+                if (e == undefined) {
+                    e = 'e'
+                }
+
+                // last dont do ","
+                if (y == this.gridYMax && x == this.gridXMax) {
+                    out += e;
+                } else {
+                    out += e + ",";
+
+                }
+
+            }
+            if (y != this.gridYMax) {
+                out += 'n' + ",";
+            }
+        }
+        return out;
+    }
+
+    public static fromString(str: String): Game | undefined {
+        let newGame: Game = new Game();
+
+        setGame(newGame);
+
+        let list = str.split(",");
+        if (list.length < 5) {
+            return undefined;
+        }
+
+        let whichTurn = list[0];
+
+        if (whichTurn == 'r' || whichTurn == 'b') {
+            game.whichTurn = whichTurn;
+        } else {
+            return undefined
+        }
+
+        let turnNumber = parseInt(list[1]);
+
+        if (isNaN(turnNumber)) {
+            return undefined
+        }
+
+        if (turnNumber != 0 && turnNumber != 1) {
+            return undefined;
+        }
+
+        game.turnNumber = turnNumber;
+
+        let gridXMin = parseInt(list[2]);
+
+        if (isNaN(gridXMin)) {
+            return undefined
+        }
+
+        let gridYMin = parseInt(list[3]);
+
+        if (isNaN(gridYMin)) {
+            return undefined
+        }
+
+        let x = gridXMin;
+        let y = gridYMin;
+
+        for (let i = 4; i < list.length; i++) {
+            const e = list[i];
+
+
+            if (e == 'n') {
+                x = gridXMin;
+                y++;
+                continue;
+            }
+
+            if (e == 'e') {
+                x++;
+                continue;
+            }
+            if (e != 'b' && e != 'r' && e != 't') {
+                return undefined;
+            }
+
+            game.setTile({ x, y }, e);
+            game.expandBorder({ x, y });
+
+            x++;
+
+        }
+
+
+
+        return newGame;
+
+    }
+
     public allPossibleMove(): Move[] {
 
         let emptyTiles: gridPos[] = [];
@@ -317,9 +430,8 @@ export class Game {
         return out;
     }
 
-     public evaluateBoard(): number {
+    public evaluateBoard(p1 = this.whichTurn): number {
         let score = 0;
-        const p1 = this.whichTurn;
         const p2 = p1 === 'r' ? 'b' : 'r';
 
         const directions = [
@@ -327,32 +439,88 @@ export class Game {
             { dx: 0, dy: 1 },  // Axis 2: Vertical
             { dx: 1, dy: -1 }  // Axis 3: Diagonal
         ];
+        2
+        for (let x = this.gridXMin; x <= this.gridXMax; x++) {
+            for (let y = this.gridYMin; y <= this.gridYMax; y++) {
+                if (x == this.gridXMin) {
+                    for (let i = 1; i < 6; i++) {
+                        let a = this.evaluateLine(x - i, y, 1, 0, p1);
+                        let b = this.evaluateLine(x - i, y, 1, 0, p2) * EVAL_LINE_MULTI;
+                        // if (a != 0)
+                        //     console.log("a: " + a);
+                        // if (b != 0)
+                        //     console.log("b: " + b);
 
-        // We expand the search area slightly beyond the current pieces
-        // to find potential empty spots that could complete a line.
-        for (let x = this.gridXMin - 5; x <= this.gridXMax; x++) {
-            for (let y = this.gridYMin - 5; y <= this.gridYMax; y++) {
+
+                        score += a;
+                        score -= b;
+
+                    }
+                }
+
+                if (y == this.gridYMin) {
+
+                    for (let i = 1; i < 6; i++) {
+                        let a = this.evaluateLine(x, y - i, 0, 1, p1);
+                        let b = this.evaluateLine(x, y - i, 0, 1, p2) * EVAL_LINE_MULTI;
+                        // if (a != 0)
+                        //     console.log("a: " + a);
+                        // if (b != 0)
+                        //     console.log("b: " + b);
+
+
+                        score += a;
+                        score -= b;
+
+                    }
+                }
+
+                if(x==this.gridXMin || y == this.gridYMax){
+                    for (let i = 1; i < 6; i++) {
+                        let b = this.evaluateLine(x - i, y + i, 1, -1, p2) * EVAL_LINE_MULTI;
+                        let a = this.evaluateLine(x - i, y + i, 1, -1, p1);
+                        // if (a != 0)
+                        //     console.log("a: " + a);
+                        // if (b != 0)
+                        //     console.log("b: " + b);
+
+
+                        score += a;
+                        score -= b;
+                    }
+                }
                 for (const { dx, dy } of directions) {
-                    score += this.evaluateLine(x, y, dx, dy, p1);
-                    score -= this.evaluateLine(x, y, dx, dy, p2) * 1.2; // Block opponent more aggressively
+
+                    let a = this.evaluateLine(x, y, dx, dy, p1);
+                    let b = this.evaluateLine(x, y, dx, dy, p2) * EVAL_LINE_MULTI;
+                    // if (a != 0)
+                    //     console.log("a: " + a);
+                    // if (b != 0)
+                    //     console.log("b: " + b);
+
+
+                    score += a;
+                    score -= b;
                 }
             }
         }
 
-        if(score > 1000000){
-            return 10000000;
+        if (Math.abs(score) > EVAL_LINE_6_MIN) {
+            return score > 0 ? EVAL_LINE_6 : -EVAL_LINE_6;
         }
 
         return score;
     }
 
-    private evaluateLine(startX: number, startY: number, dx: number, dy: number, player: tile): number {
+
+    protected evaluateLine(startX: number, startY: number, dx: number, dy: number, player: tile): number {
         let count = 0;
         const opponent = player === 'r' ? 'b' : 'r';
 
         // Look at a window of 6 tiles
         for (let i = 0; i < 6; i++) {
             const t = this.getTile({ x: startX + (dx * i), y: startY + (dy * i) });
+
 
             if (t === opponent) return 0;
 
@@ -362,12 +530,12 @@ export class Game {
         }
 
         switch (count) {
-            case 6: return 10000000;
-            case 5: return 500;
-            case 4: return 500;
-            case 3: return 50;
-            case 2: return 5;
-            default: return 0;
+            case 6: return EVAL_LINE_6;
+            case 5: return EVAL_LINE_5;
+            case 4: return EVAL_LINE_4;
+            case 3: return EVAL_LINE_3;
+            case 2: return EVAL_LINE_2;
+            default: return EVAL_LINE_1;
         }
     }
 }

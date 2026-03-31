@@ -1,9 +1,11 @@
 import { bestMove } from "./bot.js";
 import { borderSize, COLOR_BLUE, COLOR_BLUE_HOVER, COLOR_EMPTY, COLOR_EMPTY_HOVER, COLOR_RED, COLOR_RED_HOVER, COLOR_TEST, COLOR_TEST_HOVER, START_GRID_RADIUS } from "./const.js";
 import { Game } from "./game.js";
-import { addListener, pointerX, pointerY } from "./listener.js";
 import { forGrid } from "./idk.js";
-import { gridType } from "./type.js";
+import { addListener, pointerX, pointerY } from "./listener.js";
+import { node } from "./node.js";
+import { gridPos } from "./type.js";
+
 
 export let canvas: HTMLCanvasElement;
 export let ctx: CanvasRenderingContext2D;
@@ -15,6 +17,12 @@ export let gridRadius = START_GRID_RADIUS;
 
 export let game: Game;
 
+export let debug: {
+    posList: gridPos[]
+} = {
+    posList: []
+}
+
 export function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -23,6 +31,15 @@ export function resizeCanvas() {
 
 
 function main() {
+
+    // run with mode?
+    if (typeof window === 'undefined') {
+        console.log("node");
+        node();
+        return;
+
+    }
+
     let canvasTemp = document.querySelector("canvas");
     if (canvasTemp == undefined) return;
     canvas = canvasTemp;
@@ -106,6 +123,7 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
 
     }
 
+    
 
 
     // draw pointer
@@ -124,7 +142,15 @@ function drawGrid(ctx: CanvasRenderingContext2D, xg: number, yg: number, radius:
     if (tilePointer != undefined) {
         d(pointerX, pointerY, colorPointer);
         // drawHex(ctx, xg + distance * pointerX + distenceh * pointerY, yg + distancedown * pointerY, radius, colorPointer)
+    } else {
+        d(pointerX, pointerY, COLOR_EMPTY_HOVER);
+
     }
+
+    debug.posList.forEach(({ x, y }) => {
+        d(x, y, "#f0f8");
+    })
+
 }
 
 
@@ -166,5 +192,11 @@ export function setGridPos(x: number, y: number) {
 export function setGridRadius(r: number) {
     gridRadius = r;
 }
+
+export function setGame(newGame: Game) {
+    game = newGame;
+}
+
+
 
 main();

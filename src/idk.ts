@@ -1,6 +1,7 @@
 import { MAXGRIDRADIUS, MINGRIDRADIUS } from "./const.js";
-import { gridRadius, gridx, gridy } from "./main.js";
+import { gridx, gridRadius, gridy } from "./main.js";
 import { gridPos, gridType, Hex_Cube, tile } from "./type.js";
+
 
 export function forGrid(grid: gridType, f: (x: number, y: number, element: tile) => undefined) {
     for (const xStr in grid) {
